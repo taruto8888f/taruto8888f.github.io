@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホラー演出テスト</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #0d0d11;
+            color: #e0e0e0;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        /* 警告ダイアログ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .modal {
+            background: #1a1a24;
+            border: 1px solid #ff4444;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(255, 0, 0, 0.2);
+        }
+        .modal h2 {
+            color: #ff4444;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .modal p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 25px;
+        }
+        .btn-agree {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-agree:hover {
+            background: #ff2222;
+            transform: scale(1.05);
+        }
+
+        /* メインコンテンツ */
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        p.desc {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn-trigger {
+            background: #222230;
+            border: 2px solid #444466;
+            color: #fff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .btn-trigger:hover {
+            border-color: #ff4444;
+            color: #ff4444;
+            box-shadow: 0 0 15px rgba(ff, 68, 68, 0.3);
+        }
+        .test-audio-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .test-audio-btn:hover {
+            color: #fff;
+            border-color: #888;
+        }
+
+        /* ジャンプスケア画面 */
+        #jumpscare-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            cursor: pointer;
+        }
+        #jumpscare-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(150%) brightness(120%);
+        }
+
+        /* フラッシュ・振動アニメーション */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-10px, 10px) rotate(-2deg); }
+            40% { transform: translate(10px, -10px) rotate(2deg); }
+            60% { transform: translate(-10px, -10px) rotate(-1deg); }
+            80% { transform: translate(10px, 10px) rotate(1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        @keyframes flash {
+            0%, 100% { filter: invert(0%) contrast(150%); }
+            50% { filter: invert(100%) contrast(200%); }
+        }
+        .jumpscare-active {
+            animation: shake 0.05s infinite, flash 0.1s infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 注意事項モーダル -->
+    <div class="modal-overlay" id="warningModal">
+        <div class="modal">
+            <h2>⚠️ 警告 / WARNING</h2>
+            <p>このウェブサイトには、大きな音やフラッシュ光、恐怖演出（ジャンプスケア）が含まれています。<br><br>心臓の弱い方、てんかん症状のある方はプレイをお控えください。</p>
+            <button class="btn-agree" id="btnAgree">理解して進む</button>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div class="container">
+        <h1>心霊実験ルーム</h1>
+        <p class="desc">ボタンを押して恐怖演出を開始します。（音量にご注意ください）</p>
+        <div class="controls">
+            <button class="btn-trigger" id="btnTrigger">暗闇を覗く</button>
+            <button class="test-audio-btn" id="btnTestAudio">🔊 音声再生テスト</button>
+        </div>
+    </div>
+
+    <!-- ジャンプスケア全画面表示 -->
+    <div id="jumpscare-overlay">
+        <!-- SVGで不気味な顔を生成（外部画像不要） -->
+        <svg id="jumpscare-img" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+            <rect width="500" height="500" fill="#050000"/>
+            <path d="M 100,250 Q 250,100 400,250 Q 250,450 100,250 Z" fill="#1a0000" stroke="#330000" stroke-width="5"/>
+            <!-- 巨大な目 -->
+            <circle cx="180" cy="220" r="50" fill="#fff"/>
+            <circle cx="180" cy="220" r="15" fill="#000"/>
+            <circle cx="175" cy="215" r="5" fill="#ff0000"/>
+            <circle cx="320" cy="220" r="50" fill="#fff"/>
+            <circle cx="320" cy="220" r="15" fill="#000"/>
+            <circle cx="315" cy="215" r="5" fill="#ff0000"/>
+            <!-- 裂けた口 -->
+            <path d="M 120,340 Q 250,480 380,340 Q 250,380 120,340 Z" fill="#000" stroke="#ff0000" stroke-width="4"/>
+            <!-- 鋭い歯 -->
+            <polygon points="150,345 165,370 180,348" fill="#fff"/>
+            <polygon points="200,350 215,385 230,352" fill="#fff"/>
+            <polygon points="270,352 285,385 300,350" fill="#fff"/>
+            <polygon points="320,348 335,370 350,345" fill="#fff"/>
+        </svg>
+    </div>
+
+    <script>
+        // Web Audio API を使用した効果音作成
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // 恐怖効果音（悲鳴＋ノイズ＋衝撃音）の自動生成
+        function playScreamSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+
+            // 1. ノイズ（悲鳴のベース）
+            const bufferSize = audioCtx.sampleRate * 1.5; // 1.5秒
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            // フィルター（鋭い音にする）
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.setValueAtTime(1000, now);
+            filter.frequency.linearRampToValueAtTime(3000, now + 0.3);
+            filter.frequency.linearRampToValueAtTime(500, now + 1.5);
+            filter.Q.setValueAtTime(5, now);
+
+            // 2. 激しい不協和音オシレーター（悲鳴の高音）
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc2.type = 'sawtooth';
+            
+            osc1.frequency.setValueAtTime(800, now);
+            osc1.frequency.exponentialRampToValueAtTime(2500, now + 0.1);
+            osc1.frequency.exponentialRampToValueAtTime(400, now + 1.2);
+
+            osc2.frequency.setValueAtTime(850, now);
+            osc2.frequency.exponentialRampToValueAtTime(2600, now + 0.1);
+            osc2.frequency.exponentialRampToValueAtTime(420, now + 1.2);
+
+            // 音量調節（ゲイン）
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.8, now + 0.05); // 一気に爆音
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+            // 接続
+            noise.connect(filter);
+            filter.connect(gain);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            // 再生開始
+            noise.start(now);
+            osc1.start(now);
+            osc2.start(now);
+            noise.stop(now + 1.5);
+            osc1.stop(now + 1.5);
+            osc2.stop(now + 1.5);
+        }
+
+        // DOM要素の取得
+        const warningModal = document.getElementById('warningModal');
+        const btnAgree = document.getElementById('btnAgree');
+        const btnTrigger = document.getElementById('btnTrigger');
+        const btnTestAudio = document.getElementById('btnTestAudio');
+        const jumpscareOverlay = document.getElementById('jumpscare-overlay');
+        const jumpscareImg = document.getElementById('jumpscare-img');
+
+        // 注意事項の同意ボタン
+        btnAgree.addEventListener('click', () => {
+            initAudio();
+            warningModal.style.display = 'none';
+        });
+
+        // テスト音声ボタン
+        btnTestAudio.addEventListener('click', () => {
+            playScreamSound();
+        });
+
+        // ジャンプスケア発動
+        btnTrigger.addEventListener('click', () => {
+            playScreamSound();
+            
+            // 全画面化（可能なら）
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+
+            // オーバーレイ表示＆アニメーション追加
+            jumpscareOverlay.style.display = 'flex';
+            jumpscareImg.classList.add('jumpscare-active');
+
+            // 2秒後に自動で閉じる
+            setTimeout(() => {
+                closeJumpscare();
+            }, 2000);
+        });
+
+        // 画面クリックでも閉じる
+        jumpscareOverlay.addEventListener('click', () => {
+            closeJumpscare();
+        });
+
+        function closeJumpscare() {
+            jumpscareOverlay.style.display = 'none';
+            jumpscareImg.classList.remove('jumpscare-active');
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>

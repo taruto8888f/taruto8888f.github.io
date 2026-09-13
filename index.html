@@ -305,12 +305,12 @@
             closeJumpscare();
         });
 
-        function closeJumpscare() {
-            jumpscareOverlay.style.display = 'none';
-            jumpscareImg.classList.remove('jumpscare-active');
+       function closeJumpscare() {
+            // フルスクリーンを解除して新しいページへ移動
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
             }
+            window.location.href = 'end.html';
         }
     </script>
 </body>

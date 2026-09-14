@@ -208,12 +208,13 @@
         }
 
         // 恐怖効果音（悲鳴＋ノイズ＋衝撃音）の自動生成
+       // 恐怖効果音（一気に爆発音・打撃音 "バン!!!" を鳴らす）
         function playScreamSound() {
             initAudio();
             const now = audioCtx.currentTime;
 
-            // 1. ノイズ（悲鳴のベース）
-            const bufferSize = audioCtx.sampleRate * 1.5; // 1.5秒
+            // 1. ノイズ（一瞬の「ドカン！」という破裂音）
+            const bufferSize = audioCtx.sampleRate * 1.0; // 1秒間
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
@@ -223,48 +224,43 @@
             const noise = audioCtx.createBufferSource();
             noise.buffer = buffer;
 
-            // フィルター（鋭い音にする）
+            // 低音重視のフィルター（「バン！」というアタック音）
             const filter = audioCtx.createBiquadFilter();
-            filter.type = "bandpass";
-            filter.frequency.setValueAtTime(1000, now);
-            filter.frequency.linearRampToValueAtTime(3000, now + 0.3);
-            filter.frequency.linearRampToValueAtTime(500, now + 1.5);
-            filter.Q.setValueAtTime(5, now);
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(3000, now);
+            filter.frequency.exponentialRampToValueAtTime(100, now + 0.3); // 一瞬で低音へ沈む
 
-            // 2. 激しい不協和音オシレーター（悲鳴の高音）
-            const osc1 = audioCtx.createOscillator();
-            const osc2 = audioCtx.createOscillator();
-            osc1.type = 'sawtooth';
-            osc2.type = 'sawtooth';
-            
-            osc1.frequency.setValueAtTime(800, now);
-            osc1.frequency.exponentialRampToValueAtTime(2500, now + 0.1);
-            osc1.frequency.exponentialRampToValueAtTime(400, now + 1.2);
+            // 2. 重低音（ドスンという衝撃音）
+            const subOsc = audioCtx.createOscillator();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(180, now);
+            subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
 
-            osc2.frequency.setValueAtTime(850, now);
-            osc2.frequency.exponentialRampToValueAtTime(2600, now + 0.1);
-            osc2.frequency.exponentialRampToValueAtTime(420, now + 1.2);
-
-            // 音量調節（ゲイン）
+            // 音量コントロール（0.001秒で一気に最大音量にする設定）
             const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0.01, now);
-            gain.gain.linearRampToValueAtTime(0.8, now + 0.05); // 一気に爆音
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            gain.gain.setValueAtTime(1.0, now); // 押した瞬間に即最大音量！
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8); // 余韻を残して消える
 
             // 接続
             noise.connect(filter);
             filter.connect(gain);
-            osc1.connect(gain);
-            osc2.connect(gain);
+            subOsc.connect(gain);
             gain.connect(audioCtx.destination);
 
-            // 再生開始
+            // 即時再生開始
             noise.start(now);
-            osc1.start(now);
-            osc2.start(now);
-            noise.stop(now + 1.5);
-            osc1.stop(now + 1.5);
-            osc2.stop(now + 1.5);
+            subOsc.start(now);
+            noise.stop(now + 0.8);
+            subOsc.stop(now + 0.8);
+        }
+
+
+function closeJumpscare() {
+            // フルスクリーンを解除して新しいページへ移動
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+            window.location.href = 'end.html';
         }
 
         // DOM要素の取得

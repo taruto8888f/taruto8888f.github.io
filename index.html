@@ -207,7 +207,6 @@
             }
         }
 
-        // 恐怖効果音（悲鳴＋ノイズ＋衝撃音）の自動生成
        // 恐怖効果音（一気に爆発音・打撃音 "バン!!!" を鳴らす）
         function playScreamSound() {
             initAudio();
@@ -277,24 +276,32 @@ function closeJumpscare() {
             warningModal.style.display = 'none';
         });
 
-        // ジャンプスケア発動
+       // 画像を事前に読み込んでおく（遅延防止）
+        const preloadImage = new Image();
+        if (jumpscareImg && jumpscareImg.src) {
+            preloadImage.src = jumpscareImg.src;
+        }
+
+        // ジャンプスケア発動（音と画像を完全に同時に出す）
         btnTrigger.addEventListener('click', () => {
+            // 1. 先に画面表示（display: flex）
+            jumpscareOverlay.style.display = 'flex';
+            jumpscareImg.classList.add('jumpscare-active');
+
+            // 2. 音声を即時再生（画面表示と同時に鳴らす）
             playScreamSound();
-            
-            // 全画面化（可能なら）
+
+            // 3. 全画面化（可能なら）
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
 
-            // オーバーレイ表示＆アニメーション追加
-            jumpscareOverlay.style.display = 'flex';
-            jumpscareImg.classList.add('jumpscare-active');
-
-            // 2秒後に自動で閉じる
+            // 4. 2秒後に自動で閉じ（end.htmlへ移動）
             setTimeout(() => {
                 closeJumpscare();
             }, 2000);
         });
+
 
         // 画面クリックでも閉じる
         jumpscareOverlay.addEventListener('click', () => {

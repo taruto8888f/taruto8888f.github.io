@@ -195,65 +195,27 @@
     </div>
 
     <script>
-        // Web Audio API を使用した効果音作成
-        let audioCtx = null;
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
+        // 高音質な「バン！」という爆発衝撃音のプリロード
+        const bangAudio = new Audio('bang.mp3');
+        bangAudio.preload = 'auto';
+        bangAudio.volume = 1.0; // 最大音量
 
-       // 恐怖効果音（一気に爆発音・打撃音 "バン!!!" を鳴らす）
+        // 音声再生関数（事前ロードした実音を即時再生）
         function playScreamSound() {
-            initAudio();
-            const now = audioCtx.currentTime;
-
-            // 1. ノイズ（一瞬の「ドカン！」という破裂音）
-            const bufferSize = audioCtx.sampleRate * 1.0; // 1秒間
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = Math.random() * 2 - 1;
+            try {
+                bangAudio.currentTime = 0; // 頭出し
+                const playPromise = bangAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Audio play failed:", error);
+                    });
+                }
+            } catch (e) {
+                console.error(e);
             }
-
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-
-            // 低音重視のフィルター（「バン！」というアタック音）
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = "lowpass";
-            filter.frequency.setValueAtTime(3000, now);
-            filter.frequency.exponentialRampToValueAtTime(100, now + 0.3); // 一瞬で低音へ沈む
-
-            // 2. 重低音（ドスンという衝撃音）
-            const subOsc = audioCtx.createOscillator();
-            subOsc.type = 'sine';
-            subOsc.frequency.setValueAtTime(180, now);
-            subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
-
-            // 音量コントロール（0.001秒で一気に最大音量にする設定）
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(1.0, now); // 押した瞬間に即最大音量！
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8); // 余韻を残して消える
-
-            // 接続
-            noise.connect(filter);
-            filter.connect(gain);
-            subOsc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            // 即時再生開始
-            noise.start(now);
-            subOsc.start(now);
-            noise.stop(now + 0.8);
-            subOsc.stop(now + 0.8);
         }
-
-
+        
 function closeJumpscare() {
             // フルスクリーンを解除して新しいページへ移動
             if (document.fullscreenElement) {

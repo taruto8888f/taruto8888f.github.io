@@ -282,21 +282,31 @@ function closeJumpscare() {
             preloadImage.src = jumpscareImg.src;
         }
 
-        // ジャンプスケア発動（音と画像を完全に同時に出す）
-        btnTrigger.addEventListener('click', () => {
-            // 1. 先に画面表示（display: flex）
-            jumpscareOverlay.style.display = 'flex';
-            jumpscareImg.classList.add('jumpscare-active');
+        // 1. ページ読み込み完了時に画像をバックグラウンドで強制的に事前読み込み
+        window.addEventListener('DOMContentLoaded', () => {
+            if (jumpscareImg && jumpscareImg.src) {
+                const img = new Image();
+                img.src = jumpscareImg.src;
+            }
+        });
 
-            // 2. 音声を即時再生（画面表示と同時に鳴らす）
+        // 2. ジャンプスケア発動（音と画像を完全同時に実行）
+        btnTrigger.addEventListener('click', () => {
+            // 音声コンテキストの再開確認と即時再生
             playScreamSound();
 
-            // 3. 全画面化（可能なら）
+            // 画像オーバーレイを最前面に表示（描画遅延をゼロに）
+            jumpscareOverlay.style.display = 'flex';
+            requestAnimationFrame(() => {
+                jumpscareImg.classList.add('jumpscare-active');
+            });
+
+            // 全画面化（可能なら）
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
 
-            // 4. 2秒後に自動で閉じ（end.htmlへ移動）
+            // 2秒後に自動で移動
             setTimeout(() => {
                 closeJumpscare();
             }, 2000);

@@ -194,18 +194,16 @@
         <img id="jumpscare-img" src="手.jpg" alt="jumpscare">
     </div>
 
-    <script>
-
+   <script>
         // 高音質な「バン！」という爆発衝撃音のプリロード
-        const bangAudio = new Audio('
-maou_se_sound_noise01.mp3');
+        const bangAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3');
         bangAudio.preload = 'auto';
-        bangAudio.volume = 1.0; // 最大音量
+        bangAudio.volume = 1.0;
 
-        // 音声再生関数（事前ロードした実音を即時再生）
+        // 音声再生関数
         function playScreamSound() {
             try {
-                bangAudio.currentTime = 0; // 頭出し
+                bangAudio.currentTime = 0;
                 const playPromise = bangAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
@@ -216,9 +214,9 @@ maou_se_sound_noise01.mp3');
                 console.error(e);
             }
         }
-        
-function closeJumpscare() {
-            // フルスクリーンを解除して新しいページへ移動
+
+        // 終了・画面切り替え関数
+        function closeJumpscare() {
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
             }
@@ -229,23 +227,16 @@ function closeJumpscare() {
         const warningModal = document.getElementById('warningModal');
         const btnAgree = document.getElementById('btnAgree');
         const btnTrigger = document.getElementById('btnTrigger');
-        const btnTestAudio = document.getElementById('btnTestAudio');
         const jumpscareOverlay = document.getElementById('jumpscare-overlay');
         const jumpscareImg = document.getElementById('jumpscare-img');
 
         // 注意事項の同意ボタン
         btnAgree.addEventListener('click', () => {
-            initAudio();
             warningModal.style.display = 'none';
+            bangAudio.load();
         });
 
-       // 画像を事前に読み込んでおく（遅延防止）
-        const preloadImage = new Image();
-        if (jumpscareImg && jumpscareImg.src) {
-            preloadImage.src = jumpscareImg.src;
-        }
-
-        // 1. ページ読み込み完了時に画像をバックグラウンドで強制的に事前読み込み
+        // ページの初期化で画像をプリロード
         window.addEventListener('DOMContentLoaded', () => {
             if (jumpscareImg && jumpscareImg.src) {
                 const img = new Image();
@@ -253,41 +244,28 @@ function closeJumpscare() {
             }
         });
 
-        // 2. ジャンプスケア発動（音と画像を完全同時に実行）
+        // ジャンプスケア発動ボタン
         btnTrigger.addEventListener('click', () => {
-            // 音声コンテキストの再開確認と即時再生
             playScreamSound();
 
-            // 画像オーバーレイを最前面に表示（描画遅延をゼロに）
             jumpscareOverlay.style.display = 'flex';
             requestAnimationFrame(() => {
                 jumpscareImg.classList.add('jumpscare-active');
             });
 
-            // 全画面化（可能なら）
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
 
-            // 2秒後に自動で移動
             setTimeout(() => {
                 closeJumpscare();
             }, 2000);
         });
 
-
         // 画面クリックでも閉じる
         jumpscareOverlay.addEventListener('click', () => {
             closeJumpscare();
         });
-
-       function closeJumpscare() {
-            // フルスクリーンを解除して新しいページへ移動
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-            }
-            window.location.href = 'end.html';
-        }
     </script>
 </body>
 </html>
